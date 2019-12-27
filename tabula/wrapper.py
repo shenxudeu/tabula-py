@@ -83,12 +83,16 @@ def _run(java_options, options, path=None, encoding="utf-8"):
             stderr=subprocess.PIPE,
             stdin=subprocess.DEVNULL,
             check=True,
+            timeout=60,
         )
         if result.stderr:
             logger.warning("Got stderr: {}".format(result.stderr.decode(encoding)))
         return result.stdout
     except FileNotFoundError:
         raise JavaNotFoundError(JAVA_NOT_FOUND_ERROR)
+    except subprocess.TimeoutExpired as e:
+        logger.error("Error: {}\n".format(e.output.decode(encoding)))
+        raise
     except subprocess.CalledProcessError as e:
         logger.error("Error: {}\n".format(e.output.decode(encoding)))
         raise
