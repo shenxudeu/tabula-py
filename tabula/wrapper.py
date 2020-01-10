@@ -51,7 +51,7 @@ def _jar_path():
     return os.environ.get("TABULA_JAR", DEFAULT_CONFIG["JAR_PATH"])
 
 
-def _run(java_options, options, path=None, encoding="utf-8"):
+def _run(java_options, options, path=None, encoding="utf-8", process_timeout=60):
     """Call tabula-java with the given lists of Java options and tabula-py
     options, as well as an optional path to pass to tabula-java as a regular
     argument and an optional encoding to use for any required output sent to
@@ -83,7 +83,7 @@ def _run(java_options, options, path=None, encoding="utf-8"):
             stderr=subprocess.PIPE,
             stdin=subprocess.DEVNULL,
             check=True,
-            timeout=60,
+            timeout=process_timeout,
         )
         if result.stderr:
             logger.warning("Got stderr: {}".format(result.stderr.decode(encoding)))
@@ -91,7 +91,7 @@ def _run(java_options, options, path=None, encoding="utf-8"):
     except FileNotFoundError:
         raise JavaNotFoundError(JAVA_NOT_FOUND_ERROR)
     except subprocess.TimeoutExpired as e:
-        logger.error("Error: {}\n".format(e.output.decode(encoding)))
+        logger.error("Error in TIMEOUT")
         raise
     except subprocess.CalledProcessError as e:
         logger.error("Error: {}\n".format(e.output.decode(encoding)))
@@ -100,6 +100,7 @@ def _run(java_options, options, path=None, encoding="utf-8"):
 
 def read_pdf(
     input_path,
+    process_timeout,
     output_format="dataframe",
     encoding="utf-8",
     java_options=None,
@@ -293,7 +294,7 @@ def read_pdf(
         )
 
     try:
-        output = _run(java_options, kwargs, path, encoding)
+        output = _run(java_options, kwargs, path, encoding, process_timeout)
     finally:
         if temporary:
             os.unlink(path)
